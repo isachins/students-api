@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/isachins/students-api/internal/config"
+	"github.com/isachins/students-api/internal/http/handlers/student"
 )
 
 func main() {
@@ -22,9 +23,7 @@ func main() {
 	// setup router
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to stidents api"))
-	})
+	router.HandleFunc("POST /api/students", student.New())
 
 	// setup server
 	server := http.Server{
@@ -32,7 +31,7 @@ func main() {
 		Handler: router,
 	}
 
-	slog.Info("Server started on port", slog.String("address",cfg.Addr))
+	slog.Info("Server started on port", slog.String("address", cfg.Addr))
 
 	done := make(chan os.Signal, 1)
 
@@ -51,7 +50,7 @@ func main() {
 	// Gracefull Shutdown
 	slog.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
