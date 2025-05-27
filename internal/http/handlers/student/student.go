@@ -9,11 +9,12 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator"
+	"github.com/isachins/students-api/internal/storage"
 	"github.com/isachins/students-api/internal/types"
 	"github.com/isachins/students-api/internal/utils/response"
 )
 
-func New() http.HandlerFunc {
+func New(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		slog.Info("creating a student")
@@ -39,7 +40,18 @@ func New() http.HandlerFunc {
 			return
 		}
 
+		lastID, err :=storage.CreateStudent(
+			student.Name,
+			student.Email,
+			student.Age,
+		)
+		slog.Info("User Created successfully", slog.String("id", fmt.Sprint(lastID)))
+		if err != nil {
+			response.WriteJSON(w, http.StatusInternalServerError, err)
+			return
+		}
 
-		response.WriteJSON(w, http.StatusCreated, map[string] string{"success": "OK"})
+
+		response.WriteJSON(w, http.StatusCreated, map[string] int64{"id": lastID})
 	}
 }
