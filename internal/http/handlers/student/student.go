@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator"
 	"github.com/isachins/students-api/internal/storage"
@@ -20,7 +21,7 @@ func New(storage storage.Storage) http.HandlerFunc {
 		slog.Info("creating a student")
 
 		var student types.Student
-		
+
 		err := json.NewDecoder(r.Body).Decode(&student)
 		if errors.Is(err, io.EOF) {
 			response.WriteJSON(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("empty body")))
@@ -40,7 +41,7 @@ func New(storage storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		lastID, err :=storage.CreateStudent(
+		lastID, err := storage.CreateStudent(
 			student.Name,
 			student.Email,
 			student.Age,
@@ -51,7 +52,30 @@ func New(storage storage.Storage) http.HandlerFunc {
 			return
 		}
 
+		response.WriteJSON(w, http.StatusCreated, map[string]int64{"id": lastID})
+	}
 
-		response.WriteJSON(w, http.StatusCreated, map[string] int64{"id": lastID})
+}
+
+func GetByID(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		slog.Info("Getting a student", slog.String("id", id))
+
+		intID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			slog.Error("error parsing id", slog.String("error", err.Error()))
+			response.WriteJSON(w, http.StatusBadRequest, response.GeneralError(err))
+			return
+		}
+
+		student, err := storage.GetStudentByID(intID)
+		if err != nil {
+			slog.Error("error getting student", slog.String("id", id))
+			response.WriteJSON(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.WriteJSON(w, http.StatusOK, student)
 	}
 }
