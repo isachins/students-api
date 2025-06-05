@@ -10,13 +10,14 @@ import (
 )
 
 type Response struct {
-	Status string `json:"status"`
-	Error  string `json:"error"`
+	Status  int64       `json:"status"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 const (
-	StatusOK    = "OK"
-	StatusError = "ERROR"
+	StatusOK    = 200
+	StatusError = 144
 )
 
 // WriteJSON writes the data to the response writer with the given status code
@@ -30,8 +31,9 @@ func WriteJSON(w http.ResponseWriter, status int, data interface{}) error {
 
 func GeneralError(err error) Response {
 	return Response{
-		Status: StatusError,
-		Error:  err.Error(),
+		Status:  StatusError,
+		Message: err.Error(),
+		Data:    nil,
 	}
 }
 
@@ -46,7 +48,16 @@ func ValidationError(errs validator.ValidationErrors) Response {
 		}
 	}
 	return Response{
-		Status: StatusError,
-		Error:  strings.Join(errMsgs, ", "),
+		Status:  StatusError,
+		Message: strings.Join(errMsgs, ", "),
+		Data:    nil,
+	}
+}
+
+func GeneralSuccess(message string, data interface{}) Response {
+	return Response{
+		Status:  StatusOK,
+		Message: message,
+		Data:    data,
 	}
 }

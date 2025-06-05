@@ -3,6 +3,7 @@ package sqlite
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/isachins/students-api/internal/config"
 	"github.com/isachins/students-api/internal/types"
@@ -11,7 +12,6 @@ import (
 
 type Sqlite struct {
 	Db *sql.DB
-
 }
 
 func New(cfg *config.Config) (*Sqlite, error) {
@@ -38,8 +38,8 @@ func New(cfg *config.Config) (*Sqlite, error) {
 
 }
 
-func (s * Sqlite) CreateStudent(name string, email string, age int) (int64, error) {
-	
+func (s *Sqlite) CreateStudent(name string, email string, age int) (int64, error) {
+
 	stmt, err := s.Db.Prepare("INSERT INTO students(name, email, age) VALUES(?, ?, ?)")
 	if err != nil {
 		return 0, err
@@ -50,19 +50,19 @@ func (s * Sqlite) CreateStudent(name string, email string, age int) (int64, erro
 	if err != nil {
 		return 0, err
 	}
-	
+
 	lastId, err := result.LastInsertId()
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return lastId, nil
-	
+
 }
 
 func (s *Sqlite) GetStudentByID(id int64) (types.Student, error) {
 	stmt, err := s.Db.Prepare("SELECT id, name, email, age FROM students WHERE id = ? LIMIT 1")
-    if err != nil {
+	if err != nil {
 		return types.Student{}, err
 	}
 	defer stmt.Close()
@@ -104,9 +104,77 @@ func (s *Sqlite) GetStudents() ([]types.Student, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		students = append(students, student)
 	}
-	
+
 	return students, nil
+}
+
+func (s *Sqlite) UpdateStudent(id int64, name string, email string, age int) (types.Student, error) {
+	// First check if the student exists
+	existingStudent, err := s.GetStudentByID(id)
+	if err != nil {
+		return types.Student{}, err
+	}
+
+	// Build the update query dynamically based on which fields are provided
+	var queryParts []string
+	var args []interface{}
+
+	if name != "" {
+		queryParts = append(queryParts, "name = ?")
+		args = append(args, name)
+	} else {
+		args = append(args, existingStudent.Name)
+	}
+
+	if email != "" {
+		queryParts = append(queryParts, "email = ?")
+		args = append(args, email)
+	} else {
+		args = append(args, existingStudent.Email)
+	}
+
+	if age != 0 {
+		queryParts = append(queryParts, "age = ?")
+		args = append(args, age)
+	} else {
+		args = append(args, existingStudent.Age)
+	}
+
+	// Add the WHERE clause
+	args = append(args, id)
+
+	// Build the final query
+	query := fmt.Sprintf("UPDATE students SET %s WHERE id = ?", strings.Join(queryParts, ", "))
+
+	stmt, err := s.Db.Prepare(query)
+	if err != nil {
+		return types.Student{}, fmt.Errorf("failed to prepare update statement: %w", err)
+	}
+	defer stmt.Close()
+
+	// Execute the update
+	_, err = stmt.Exec(args...)
+	if err != nil {
+		return types.Student{}, fmt.Errorf("failed to update student: %w", err)
+	}
+
+	// Fetch and return the updated student
+	return s.GetStudentByID(id)
+}
+
+func (s *Sqlite) DeleteStudent(id int64) (int64, error) {
+	stmt, err := s.Db.Prepare("DELETE FROM students WHERE id = ?")
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return 0, fmt.Errorf("failed to delete student: %w", err)
+	}
+	return id, nil
 }
