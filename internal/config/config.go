@@ -10,7 +10,7 @@ import (
 )
 
 type HTTPServer struct {
-	Addr string `yaml:"address" env-required:"true"`
+	Addr string `yaml:"address" env:"PORT" env-default:"8082"`
 }
 
 // env-default:"production"
@@ -54,6 +54,11 @@ func MustLoad() *Config {
 	err := cleanenv.ReadConfig(configPath, &cfg)
 	if err != nil {
 		log.Fatalf("Cannot read config file: %s", err.Error())
+	}
+
+	// Ensure the port is properly formatted
+	if cfg.Addr != "" && cfg.Addr[0] != ':' {
+		cfg.Addr = ":" + cfg.Addr
 	}
 
 	return &cfg
