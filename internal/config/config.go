@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -22,17 +23,26 @@ type Config struct {
 func MustLoad() *Config {
 	var configPath string
 
+	// First try to get config path from environment
 	configPath = os.Getenv("CONFIG_PATH")
 
+	// If not set in environment, try command line flag
 	if configPath == "" {
 		flags := flag.String("config", "", "path to config file")
 		flag.Parse()
 
 		configPath = *flags
+	}
 
-		if configPath == "" {
-			log.Fatal("Config path is not set")
+	// If still not set, use default config path for local development
+	if configPath == "" {
+		// Get the current working directory
+		wd, err := os.Getwd()
+		if err != nil {
+			log.Fatal("Failed to get working directory: ", err)
 		}
+		// Default to config/local.yaml in the project root
+		configPath = filepath.Join(wd, "config", "local.yaml")
 	}
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
