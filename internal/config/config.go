@@ -42,7 +42,7 @@ func MustLoad() *Config {
 			log.Fatal("Failed to get working directory: ", err)
 		}
 		// Default to config/local.yaml in the project root
-		configPath = filepath.Join(wd, "config", "local.yaml")
+		configPath = filepath.Join(wd, "config", "production.yaml")
 	}
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
