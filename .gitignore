@@ -29,6 +29,9 @@ go.work.sum
 
 CONFIG_PATH=/app/config/production.yaml
 
+# # Keep production config
+# !config/production.yaml
+
 # Local development files
 storage/
 *.db
@@ -40,5 +43,3 @@ storage/
 # OS files
 .DS_Store
 
-# Keep production config
-!config/production.yaml
