@@ -18,7 +18,7 @@ COPY . .
 
 # Build the application with CGO enabled
 ENV CGO_ENABLED=1
-RUN go build -o main ./cmd/students-api
+RUN go build -o main ./cmd/students-api/main.go
 
 # Final stage
 FROM alpine:latest
@@ -35,5 +35,8 @@ RUN mkdir -p /app/storage && chmod 777 /app/storage
 COPY --from=builder /app/main .
 COPY --from=builder /app/config/production.yaml /app/config/production.yaml
 
+EXPOSE 4040
+
 # Run the application
 CMD ["./main"] 
+
