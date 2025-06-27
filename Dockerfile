@@ -35,6 +35,9 @@ RUN mkdir -p /app/storage && chmod 777 /app/storage
 COPY --from=builder /app/main .
 COPY --from=builder /app/config/production.yaml /app/config/production.yaml
 
+# Set environment variables
+ENV CONFIG_PATH=/app/config/production.yaml
+
 EXPOSE 4040
 
 # Run the application

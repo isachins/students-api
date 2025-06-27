@@ -1,4 +1,4 @@
 env: "production"
 storage_path: "storage/storage.db"
 http_server:
-  address: "${PORT}" 
+  address: ":4040"
